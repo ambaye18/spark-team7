@@ -3,8 +3,8 @@ import prisma from '../prisma_client.ts';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { env } from '../common/setupEnv.ts';
-//Delete this line once you use the function
-// @ts-ignore
+import { get } from 'http';
+
 async function doesUserExist(email: string): Promise<boolean> {
   /**
    * Check if user exists in the database
@@ -21,8 +21,7 @@ async function doesUserExist(email: string): Promise<boolean> {
   }
   return false;
 }
-// Delete this line once you use the function
-// @ts-ignore
+
 async function getUser(email: string) {
   /**
    * Get user from the database
@@ -56,6 +55,36 @@ async function createUser(name: string, email: string, password: string) {
   return newUser;
 }
 
-export const signup = async (req: Request, res: Response) => {};
+export const signup = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).send('Email and password are required');
+    }
+    if (!doesUserExist(email)) {
+      return res.status(401).send('User does not exist with the given email');
+    }
+
+    const user = await prisma.user.findFirst({
+      where: email,
+    });
+    if (!user) {
+      return res.status(401).send('User does not exist with the given email');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password as string);
+
+    if (!isPasswordValid) {
+      return res.status(401).send('Invalid password');
+    }
+
+    const token = jwt.sign({ _id: user.id }, env.JWT_TOKEN_SECRET, { expiresIn: '1h' }); // Replace id with appropriate field
+
+    return res.json({ success: true, token });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send('Server error');
+  }
+};
 
 export const login = async (req: Request, res: Response) => {};
