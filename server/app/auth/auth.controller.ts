@@ -103,9 +103,8 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).send('User does not exist with the given email');
     }
 
-    const user = await prisma.user.findFirst({
-      where: email,
-    });
+    const user = await getUser(email);
+
     if (!user) {
       return res.status(401).send('User does not exist with the given email');
     }
