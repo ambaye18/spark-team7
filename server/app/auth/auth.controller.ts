@@ -3,8 +3,8 @@ import prisma from '../prisma_client.ts';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { env } from '../common/setupEnv.ts';
-//Delete this line once you use the function
-// @ts-ignore
+import { isValidEmail, isValidPassword, isSafeString } from '../validations/userValidation.ts';
+
 async function doesUserExist(email: string): Promise<boolean> {
   /**
    * Check if user exists in the database
@@ -21,8 +21,7 @@ async function doesUserExist(email: string): Promise<boolean> {
   }
   return false;
 }
-// Delete this line once you use the function
-// @ts-ignore
+
 async function getUser(email: string) {
   /**
    * Get user from the database
@@ -56,6 +55,68 @@ async function createUser(name: string, email: string, password: string) {
   return newUser;
 }
 
-export const signup = async (req: Request, res: Response) => {};
+export const signup = async (req: Request, res: Response) => {
+  try {
+    //Validation
+    const { email, name, password } = req.body;
+    if (!name || typeof name !== 'string' || name.trim() === '' || !isSafeString(name)) {
+      return res.status(400).json({ message: 'Invalid name' });
+    }
+    if (!email || typeof email !== 'string' || !isValidEmail(email)) {
+      return res.status(400).json({ message: 'Invalid email' });
+    }
+    if (!password || typeof password !== 'string' || !isValidPassword(password)) {
+      return res.status(400).json({ message: 'Invalid password (minimum 6 characters)' });
+    }
 
-export const login = async (req: Request, res: Response) => {};
+    const existingUser = await prisma.user.findFirst({ where: { email: email } });
+    if (existingUser) {
+      return res.status(409).json({ message: 'User already exists.' });
+    }
+
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(password, salt);
+    await prisma.user.create({
+      data: {
+        email: email,
+        name: name,
+        password: hashedPassword,
+      },
+    });
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Error during signup:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const login = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+    if (!doesUserExist(email)) {
+      return res.status(401).json({ message: 'User does not exist with the given email' });
+    }
+
+    const user = await getUser(email);
+
+    if (!user) {
+      return res.status(401).json({ message: 'User does not exist with the given email' });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password as string);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Invalid password' });
+    }
+
+    const token = jwt.sign({ id: user.id, issuedAt: Date.now() }, env.JWT_TOKEN_SECRET, { expiresIn: '1h' });
+
+    return res.json({ success: true, token });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
