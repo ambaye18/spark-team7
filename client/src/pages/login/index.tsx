@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import { Form, Input, Button, message } from 'antd';
+import Link from "next/link";
 
 const Login = () => {
   const [form] = Form.useForm();
@@ -10,22 +11,22 @@ const Login = () => {
   const onFormFinish = async (values: { email: string; password: string }) => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("http://localhost:5005/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       });
 
       const data = await response.json();
       if (response.ok) {
-        message.success('Login successful!');
-        router.push('/main');
+        message.success("Login successful!");
+        router.push("/main");
       } else {
-        message.error(data.message || 'Login failed!');
+        message.error(data.message || "Login failed!");
       }
     } catch (error) {
-      console.error('Login error:', error);
-      message.error('An error occurred during login.');
+      console.error("Login error:", error);
+      message.error("An error occurred during login.");
     } finally {
       setIsLoading(false);
     }
@@ -38,14 +39,14 @@ const Login = () => {
         <Form.Item
           name="email"
           label="Email"
-          rules={[{ required: true, message: 'Please input your email!' }]}
+          rules={[{ required: true, message: "Please input your email!" }]}
         >
           <Input />
         </Form.Item>
         <Form.Item
           name="password"
           label="Password"
-          rules={[{ required: true, message: 'Please input your password!' }]}
+          rules={[{ required: true, message: "Please input your password!" }]}
         >
           <Input.Password />
         </Form.Item>
@@ -54,7 +55,7 @@ const Login = () => {
             Log In
           </Button>
         </Form.Item>
-        <a href="/">Back to Home</a>
+        <Link href="/">Back to Home</Link>
       </Form>
     </div>
   );
