@@ -4,8 +4,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { env } from '../common/setupEnv.ts';
 import { isValidEmail, isValidPassword, isSafeString } from '../validations/userValidation.ts';
-//Delete this line once you use the function
-// @ts-ignore
+
 async function doesUserExist(email: string): Promise<boolean> {
   /**
    * Check if user exists in the database
@@ -22,8 +21,7 @@ async function doesUserExist(email: string): Promise<boolean> {
   }
   return false;
 }
-// Delete this line once you use the function
-// @ts-ignore
+
 async function getUser(email: string) {
   /**
    * Get user from the database
@@ -85,7 +83,7 @@ export const signup = async (req: Request, res: Response) => {
       },
     });
     console.log('New user created');
-    const token = jwt.sign({ id: newUser.id, name: newUser.name, email: newUser.email }, env.JWT_TOKEN_SECRET, {
+    const token = jwt.sign({ id: newUser.id, issuedAt: Date.now() }, env.JWT_TOKEN_SECRET, {
       expiresIn: '1h',
     });
     return res.json({ success: true, token: token });
@@ -95,4 +93,34 @@ export const signup = async (req: Request, res: Response) => {
   }
 };
 
-export const login = async (req: Request, res: Response) => {};
+export const login = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).send('Email and password are required');
+    }
+    if (!doesUserExist(email)) {
+      return res.status(401).send('User does not exist with the given email');
+    }
+
+    const user = await prisma.user.findFirst({
+      where: email,
+    });
+    if (!user) {
+      return res.status(401).send('User does not exist with the given email');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password as string);
+
+    if (!isPasswordValid) {
+      return res.status(401).send('Invalid password');
+    }
+
+    const token = jwt.sign({ id: user.id, issuedAt: Date.now() }, env.JWT_TOKEN_SECRET, { expiresIn: '1h' });
+
+    return res.json({ success: true, token });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send('Server error');
+  }
+};
