@@ -17,11 +17,13 @@ const Login = () => {
         body: JSON.stringify(values),
       });
 
-      const data = await response.json();
       if (response.ok) {
+        const userData = await response.json();
+        localStorage.setItem('userId', userData.userId);  
         message.success("Login successful!");
-        router.push("/main");
+        router.push("/profile");  // Redirect to the profile pg
       } else {
+        const data = await response.json();
         message.error(data.message || "Login failed!");
       }
     } catch (error) {
