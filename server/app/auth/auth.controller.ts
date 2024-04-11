@@ -76,14 +76,20 @@ export const signup = async (req: Request, res: Response) => {
 
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         email: email,
         name: name,
         password: hashedPassword,
       },
     });
-    return res.json({ success: true });
+    const token = jwt.sign(
+      { id: user.id, name: user.name, email: user.email, canPostEvents: user.canPostEvents, isAdmin: user.isAdmin },
+      env.JWT_TOKEN_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    return res.json({ success: true, token });
   } catch (error) {
     console.error('Error during signup:', error);
     return res.status(500).json({ message: 'Internal server error' });
@@ -93,8 +99,11 @@ export const signup = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
+    if (!email || typeof email !== 'string' || !isValidEmail(email)) {
+      return res.status(400).json({ message: 'Invalid email' });
+    }
+    if (!password || typeof password !== 'string') {
+      return res.status(400).json({ message: 'Invalid password' });
     }
     if (!doesUserExist(email)) {
       return res.status(401).json({ message: 'User does not exist with the given email' });
@@ -112,7 +121,11 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Invalid password' });
     }
 
-    const token = jwt.sign({ id: user.id, issuedAt: Date.now() }, env.JWT_TOKEN_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign(
+      { id: user.id, name: user.name, email: user.email, canPostEvents: user.canPostEvents, isAdmin: user.isAdmin },
+      env.JWT_TOKEN_SECRET,
+      { expiresIn: '1h' }
+    );
 
     return res.json({ success: true, token });
   } catch (error) {
