@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import { Form, Input, Button, message } from 'antd';
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
   const [form] = Form.useForm();
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { updateAuthToken } = useAuth();
 
   const onFormFinish = async (values: { email: string; password: string }) => {
     setIsLoading(true);
@@ -19,9 +21,11 @@ const Login = () => {
 
       if (response.ok) {
         const userData = await response.json();
-        localStorage.setItem('userId', userData.userId);  
+        localStorage.setItem("userId", userData.userId);
         message.success("Login successful!");
-        router.push("/profile");  // Redirect to the profile pg
+        updateAuthToken(userData.token);
+
+        router.push("/profile");
       } else {
         const data = await response.json();
         message.error(data.message || "Login failed!");
