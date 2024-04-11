@@ -6,6 +6,8 @@ import AuthContextProvider from "../contexts/AuthContext";
 import SideMenu from "../components/SideMenu";
 import { useRouter } from "next/router";
 import RedirectBasedOnAuth from "@/components/RedirectBasedOnAuth";
+import theme from "@/theme/themeConfig";
+import { ConfigProvider } from "antd";
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -14,16 +16,18 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <AuthContextProvider>
       <RedirectBasedOnAuth>
-        {showSideMenu ? (
-          <div className="App">
-            <div className="SideMenuAndPageContent">
-              <SideMenu />
-              <Component {...pageProps} />
+        <ConfigProvider theme={theme}>
+          {showSideMenu ? (
+            <div className="App">
+              <div className="SideMenuAndPageContent">
+                <SideMenu />
+                <Component {...pageProps} />
+              </div>
             </div>
-          </div>
-        ) : (
-          <Component {...pageProps} />
-        )}
+          ) : (
+            <Component {...pageProps} />
+          )}
+        </ConfigProvider>
       </RedirectBasedOnAuth>
     </AuthContextProvider>
   );

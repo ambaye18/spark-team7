@@ -1,9 +1,12 @@
-import React from "react";
+"use client";
+import React, { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const ProtectedRoute = () => {
   const { authState } = useAuth();
   const userId = authState?.decodedToken?.id;
+
+  useEffect(() => {}, []);
 
   return (
     <div>
