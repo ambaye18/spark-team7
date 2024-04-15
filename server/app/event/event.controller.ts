@@ -97,7 +97,7 @@ export const get_event_by_id = async (req: Request, res: Response) => {
 };
 
 export const create_event = async (req: Request, res: Response) => {
-  const { exp_time, description, qty, tags, location } = req.body;
+  const { exp_time, description, qty, tags } = req.body;
   try {
     const userId = req.body.user.id;
     const now = new Date().toISOString();
@@ -122,14 +122,6 @@ export const create_event = async (req: Request, res: Response) => {
         },
         createdAt: now,
         updatedAt: now,
-        location: {
-          create: {
-            Address: location.Address,
-            floor: location.floor,
-            room: location.room,
-            loc_note: location.loc_note,
-          },
-        },
         photos: {
           create: {
             photo: photoBase64,
