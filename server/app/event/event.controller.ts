@@ -101,9 +101,9 @@ export const create_event = async (req: Request, res: Response) => {
   try {
     const userId = req.body.user.id;
     const now = new Date().toISOString();
-    const photoData = req.body.photos;
-    const photoBuffer = Buffer.from(photoData, 'base64');
-    const photoBase64 = photoBuffer.toString('base64'); // Convert Buffer to base64 string
+    //const photoData = req.body.photos;
+    //const photoBuffer = Buffer.from(photoData, 'base64');
+    //const photoBase64 = photoBuffer.toString('base64'); // Convert Buffer to base64 string
     console.log('Value of tags:', tags);
     console.log(tags.connect);
     const newEvent = await prisma.event.create({
@@ -122,11 +122,11 @@ export const create_event = async (req: Request, res: Response) => {
         },
         createdAt: now,
         updatedAt: now,
-        photos: {
-          create: {
-            photo: photoBase64,
-          },
-        },
+        // photos: {
+        //   create: {
+        //     photo: photoBase64,
+        //   },
+        // },
       },
     });
 
