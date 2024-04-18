@@ -11,7 +11,7 @@ import {
   InputNumber,
 } from "antd";
 import { API_URL } from "../../../common/constants";
-import { IAuthTokenDecoded, IEvent, ITag } from "../../../common/interfaces";
+import { IAuthTokenDecoded, IEvent, ITag, ITagType } from "../../../common/interfaces";
 import { FilterOutlined, UserOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,9 +29,9 @@ const tailLayout = {
 
 interface ICreateEventForm {
   description: string;
-  quantity: number;
-  expTime: Date;
-  tagId: number | null;
+  qty: number;
+  exp_time: Date;
+  tags: String | null;
 }
 
 const CreateEvent: React.FC = () => {
@@ -49,16 +49,19 @@ const CreateEvent: React.FC = () => {
       return;
     }
     try {
-      const response = await fetch(`${API_URL}/api/events/`, {
+      const body = JSON.stringify({
+        ...values,
+        qty: values.qty.toString(),
+        createdBy: authState?.decodedToken?.id,
+      });
+      console.log(body);
+      const response = await fetch(`${API_URL}/api/events/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${getAuthState()?.token}`,
         },
-        body: JSON.stringify({
-          ...values,
-          createdBy: authState?.decodedToken?.id,
-        }),
+        body: body,
       });
 
       if (!response.ok) {
@@ -97,21 +100,17 @@ const CreateEvent: React.FC = () => {
             autoSize={{ minRows: 4, maxRows: 8 }}
           />
         </Form.Item>
-        <Form.Item
-          label="Quantity"
-          name="quantity"
-          rules={[{ required: true }]}
-        >
+        <Form.Item label="Quantity" name="qty" rules={[{ required: true }]}>
           <InputNumber placeholder="Enter quantity" />
         </Form.Item>
         <Form.Item
           label="Expiration Time"
-          name="expTime"
+          name="exp_time"
           rules={[{ required: true }]}
         >
           <DatePicker showTime />
         </Form.Item>
-        <Form.Item label="Tag (Optional)" name="tagId">
+        <Form.Item label="Tag (Optional)" name="tags">
           <Select>
             {/* Replace with options based on available tags */}
             <Option value="tag1">Tag 1</Option>
