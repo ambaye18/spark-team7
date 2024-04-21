@@ -15,6 +15,7 @@ import { IAuthTokenDecoded, IEvent, ITag, ITagType } from "../../../common/inter
 import { FilterOutlined, UserOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useAuth } from "@/contexts/AuthContext";
+import { get_tags } from "../../../../../server/app/tags/tags.controller";
 const { Paragraph } = Typography;
 const { Option } = Select;
 
@@ -40,6 +41,27 @@ const CreateEvent: React.FC = () => {
   const [isLoadingTags, setIsLoadingTags] = useState(false);
   const router = useRouter();
   const { getAuthState, authState } = useAuth();
+
+  // Fetch existing tags
+  useEffect(() => {
+    const fetchTags = async () => {
+      setIsLoadingTags(true);
+      try {
+        const response = await fetch(`${API_URL}/api/tags`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch tags");
+        }
+        const data = await response.json();
+        setTags(data);
+      } catch (error) {
+        console.error(error);
+        message.error("Error fetching tags. Please try again later.");
+      } finally {
+        setIsLoadingTags(false);
+      }
+    };
+    fetchTags();
+  }, []);
 
   // Handle form submission
   const handleSubmit = async (values: ICreateEventForm) => {
@@ -111,11 +133,12 @@ const CreateEvent: React.FC = () => {
           <DatePicker showTime />
         </Form.Item>
         <Form.Item label="Tag (Optional)" name="tags">
-          <Select>
-            {/* Replace with options based on available tags */}
-            <Option value="tag1">Tag 1</Option>
-            <Option value="tag2">Tag 2</Option>
-            {/* ... */}
+          <Select loading={isLoadingTags}>
+            {tags.map((tag) => (
+              <Option key={tag.tag_id} value={tag.tag_id}>
+                {tag.name}
+              </Option>
+            ))}
           </Select>
         </Form.Item>
         <Form.Item {...tailLayout}>
