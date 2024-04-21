@@ -9,9 +9,17 @@ import {
   DatePicker,
   message,
   InputNumber,
+  Space,
+  TimeRangePickerProps,
 } from "antd";
+import customParseFormat from "dayjs/plugin/customParseFormat";
 import { API_URL } from "../../../common/constants";
-import { IAuthTokenDecoded, IEvent, ITag, ITagType } from "../../../common/interfaces";
+import {
+  IAuthTokenDecoded,
+  IEvent,
+  ITag,
+  ITagType,
+} from "../../../common/interfaces";
 import { FilterOutlined, UserOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,6 +35,25 @@ const layout = {
 const tailLayout = {
   wrapperCol: { offset: 8, span: 16 },
 };
+
+// Time validation
+dayjs.extend(customParseFormat);
+const { RangePicker } = DatePicker;
+const range = (start: number, end: number) => {
+  const result = [];
+  for (let i = start; i < end; i++) {
+    result.push(i);
+  }
+  return result;
+};
+const disabledDate: TimeRangePickerProps["disabledDate"] = (current) => {
+  return current && current < dayjs().endOf("day");
+};
+const disabledDateTime = () => ({
+  disabledHours: () => range(0, 24).splice(4, 20),
+  disabledMinutes: () => range(30, 60),
+  disabledSeconds: () => [55, 56],
+});
 
 interface ICreateEventForm {
   description: string;
@@ -130,14 +157,17 @@ const CreateEvent: React.FC = () => {
           name="exp_time"
           rules={[{ required: true }]}
         >
-          <DatePicker showTime />
+          <DatePicker
+            format="YYYY-MM-DD HH:mm:ss"
+            disabledDate={disabledDate}
+            disabledTime={disabledDateTime}
+            showTime={{ defaultValue: dayjs("00:00:00", "HH:mm:ss") }}
+          />
         </Form.Item>
         <Form.Item label="Tag (Optional)" name="tags">
           <Select loading={isLoadingTags}>
             {tags.map((tag) => (
-              <Option key={tag.tag_id} value={tag.tag_id}>
-                {tag.name}
-              </Option>
+              <Option key={tag.tag_id}>{tag.name}</Option>
             ))}
           </Select>
         </Form.Item>
