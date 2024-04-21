@@ -9,22 +9,13 @@ import {
   DatePicker,
   message,
   InputNumber,
-  Space,
   TimeRangePickerProps,
 } from "antd";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { API_URL } from "../../../common/constants";
-import {
-  IAuthTokenDecoded,
-  IEvent,
-  ITag,
-  ITagType,
-} from "../../../common/interfaces";
-import { FilterOutlined, UserOutlined } from "@ant-design/icons";
+import { ITag } from "../../../common/interfaces";
 import dayjs from "dayjs";
 import { useAuth } from "@/contexts/AuthContext";
-import { get_tags } from "../../../../../server/app/tags/tags.controller";
-const { Paragraph } = Typography;
 const { Option } = Select;
 
 const layout = {
@@ -68,6 +59,20 @@ interface ICreateEventForm {
   tags: String | null;
 }
 
+// Fetch existing tags
+async function fetchTags() {
+  try {
+    const response = await fetch("/api/tags");
+    if (!response.ok) {
+      throw new Error(`Error fetching tags: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log("Fetched tags:", data);
+  } catch (error) {
+    console.error("Error fetching tags:", error);
+  }
+}
+
 const CreateEvent: React.FC = () => {
   const [form] = Form.useForm();
   const [tags, setTags] = useState<ITag[]>([]);
@@ -75,26 +80,8 @@ const CreateEvent: React.FC = () => {
   const router = useRouter();
   const { getAuthState, authState } = useAuth();
 
-  // Fetch existing tags
-  useEffect(() => {
-    const fetchTags = async () => {
-      setIsLoadingTags(true);
-      try {
-        const response = await fetch(`${API_URL}/api/tags`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch tags");
-        }
-        const data = await response.json();
-        setTags(data);
-      } catch (error) {
-        console.error(error);
-        message.error("Error fetching tags. Please try again later.");
-      } finally {
-        setIsLoadingTags(false);
-      }
-    };
-    fetchTags();
-  }, []);
+  // Fetch tags
+  fetchTags();
 
   // Handle form submission
   const handleSubmit = async (values: ICreateEventForm) => {
@@ -130,10 +117,6 @@ const CreateEvent: React.FC = () => {
       console.error(error);
       message.error("Error creating event. Please try again later.");
     }
-  };
-
-  const onFinishFailed = (errorInfo: any) => {
-    console.error("Failed:", errorInfo);
   };
 
   return (
