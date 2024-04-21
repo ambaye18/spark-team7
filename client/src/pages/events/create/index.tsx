@@ -38,7 +38,10 @@ const tailLayout = {
 
 // Time validation
 dayjs.extend(customParseFormat);
-const { RangePicker } = DatePicker;
+const disabledDate: TimeRangePickerProps["disabledDate"] = (current) => {
+  const yesterday = dayjs().subtract(1, "day");
+  return current && current < yesterday;
+};
 const range = (start: number, end: number) => {
   const result = [];
   for (let i = start; i < end; i++) {
@@ -46,14 +49,17 @@ const range = (start: number, end: number) => {
   }
   return result;
 };
-const disabledDate: TimeRangePickerProps["disabledDate"] = (current) => {
-  return current && current < dayjs().endOf("day");
+const disabledTime = () => {
+  const current = dayjs();
+  // If it's the current date, disable times before the current time
+  if (dayjs().isSame(current, "day")) {
+    return {
+      disabledHours: () => range(0, dayjs().hour() + 1), // Disable hours before the current hour
+    };
+  }
+  // For other dates, allow all times
+  return {};
 };
-const disabledDateTime = () => ({
-  disabledHours: () => range(0, 24).splice(4, 20),
-  disabledMinutes: () => range(30, 60),
-  disabledSeconds: () => [55, 56],
-});
 
 interface ICreateEventForm {
   description: string;
@@ -160,7 +166,7 @@ const CreateEvent: React.FC = () => {
           <DatePicker
             format="YYYY-MM-DD HH:mm:ss"
             disabledDate={disabledDate}
-            disabledTime={disabledDateTime}
+            disabledTime={disabledTime}
             showTime={{ defaultValue: dayjs("00:00:00", "HH:mm:ss") }}
           />
         </Form.Item>
