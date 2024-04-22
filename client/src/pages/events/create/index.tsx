@@ -60,20 +60,6 @@ interface ICreateEventForm {
   tags: String | null;
 }
 
-// Fetch existing tags
-async function fetchTags() {
-  try {
-    const response = await fetch("/api/tags");
-    if (!response.ok) {
-      throw new Error(`Error fetching tags: ${response.status}`);
-    }
-    const data = await response.json();
-    console.log("Fetched tags:", data);
-  } catch (error) {
-    console.error("Error fetching tags:", error);
-  }
-}
-
 const CreateEvent: React.FC = () => {
   const [form] = Form.useForm();
   const [tags, setTags] = useState<ITag[]>([]);
@@ -82,7 +68,28 @@ const CreateEvent: React.FC = () => {
   const { getAuthState, authState } = useAuth();
 
   // Fetch tags
-  fetchTags();
+  useEffect(() => {
+    async function fetchTags() {
+      try {
+        const response = await fetch(`${API_URL}/api/tags`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAuthState()?.token}`,
+          },
+        });
+        if (!response.ok) {
+          throw new Error(`Error fetching tags: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log("Fetched tags:", data);
+        setTags(data);
+      } catch (error) {
+        console.error("Error fetching tags:", error);
+      }
+    }
+    fetchTags();
+  }, [getAuthState]);
 
   // Handle form submission
   const handleSubmit = async (values: ICreateEventForm) => {
