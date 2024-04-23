@@ -13,9 +13,10 @@ import {
 } from "antd";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { API_URL } from "../../../common/constants";
-import { ITag } from "../../../common/interfaces";
+import { ITag, IEvent } from "../../../common/interfaces";
 import dayjs from "dayjs";
 import { useAuth } from "@/contexts/AuthContext";
+import { create_event } from "../../../../../server/app/event/event.controller";
 const { Option } = Select;
 
 const layout = {
@@ -33,14 +34,14 @@ const disabledDate: TimeRangePickerProps["disabledDate"] = (current) => {
   const today = dayjs();
   return current && current < today;
 };
-const range = (start: number, end: number) => {
+/*const range = (start: number, end: number) => {
   const result = [];
   for (let i = start; i < end; i++) {
     result.push(i);
   }
   return result;
 };
-/*const disabledTime = () => {
+const disabledTime = () => {
   const current = dayjs();
   // If it's the current date, disable times before the current time
   if (dayjs().isSame(current, "day")) {
@@ -53,17 +54,10 @@ const range = (start: number, end: number) => {
 };
 */
 
-interface ICreateEventForm {
-  description: string;
-  qty: number;
-  exp_time: Date;
-  tags: String | null;
-}
-
 const CreateEvent: React.FC = () => {
   const [form] = Form.useForm();
   const [tags, setTags] = useState<ITag[]>([]);
-  const [isLoadingTags, setIsLoadingTags] = useState(false);
+  const [isLoadingTags] = useState(false);
   const router = useRouter();
   const { getAuthState, authState } = useAuth();
 
@@ -92,7 +86,7 @@ const CreateEvent: React.FC = () => {
   }, [getAuthState]);
 
   // Handle form submission
-  const handleSubmit = async (values: ICreateEventForm) => {
+  const handleSubmit = async (values: IEvent) => {
     const token = getAuthState()?.token;
     if (!token) {
       message.error("Unauthorized user");
@@ -103,8 +97,9 @@ const CreateEvent: React.FC = () => {
         ...values,
         qty: values.qty.toString(),
         createdBy: authState?.decodedToken?.id,
+        tags: values.tags,
       });
-      console.log(body);
+      console.log("request body " + body);
       const response = await fetch(`${API_URL}/api/events/create`, {
         method: "POST",
         headers: {
@@ -161,7 +156,11 @@ const CreateEvent: React.FC = () => {
             showTime={{ defaultValue: dayjs("00:00:00", "HH:mm:ss") }}
           />
         </Form.Item>
-        <Form.Item label="Tag (Optional)" name="tags">
+        <Form.Item
+          label="Tag (Optional)"
+          name="tags"
+          rules={[{ required: false }]}
+        >
           <Select loading={isLoadingTags}>
             {tags.map((tag) => (
               <Option key={tag.tag_id}>{tag.name}</Option>
