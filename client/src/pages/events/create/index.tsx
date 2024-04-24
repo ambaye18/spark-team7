@@ -16,7 +16,6 @@ import { API_URL } from "../../../common/constants";
 import { ITag, IEvent } from "../../../common/interfaces";
 import dayjs from "dayjs";
 import { useAuth } from "@/contexts/AuthContext";
-import { create_event } from "../../../../../server/app/event/event.controller";
 const { Option } = Select;
 
 const layout = {
@@ -53,6 +52,10 @@ const disabledTime = () => {
   return {};
 };
 */
+
+function tagConvert(allTags: ITag[], selected: number[]): ITag[] {
+  return allTags.filter((tag) => selected.includes(tag.tag_id));
+}
 
 const CreateEvent: React.FC = () => {
   const [form] = Form.useForm();
@@ -97,7 +100,7 @@ const CreateEvent: React.FC = () => {
         ...values,
         qty: values.qty.toString(),
         createdBy: authState?.decodedToken?.id,
-        tags: values.tags,
+        tags: tagConvert(tags, values.tags as number[]),
       });
       console.log("request body " + body);
       const response = await fetch(`${API_URL}/api/events/create`, {
