@@ -16,6 +16,7 @@ import { API_URL } from "../../../common/constants";
 import { ITag, IEvent } from "../../../common/interfaces";
 import dayjs from "dayjs";
 import { useAuth } from "@/contexts/AuthContext";
+import { parse } from "path";
 const { Option } = Select;
 
 const layout = {
@@ -53,10 +54,10 @@ const disabledTime = () => {
 };
 */
 
-function tagConvert(allTags: ITag[], selected: number[]): ITag[] {
-  if (selected != undefined)
-    return allTags.filter((tag) => selected.includes(tag.tag_id));
-  else return [];
+function parseTags(selected: number[]): any {
+  if (selected == undefined) {
+    return undefined;
+  } else return { tag_id: Number(selected) };
 }
 
 const CreateEvent: React.FC = () => {
@@ -102,7 +103,7 @@ const CreateEvent: React.FC = () => {
         ...values,
         qty: values.qty.toString(),
         createdBy: authState?.decodedToken?.id,
-        tags: { tag_id: Number(values.tags) },
+        tags: parseTags(values.tags as number[]),
       });
       console.log("request body " + body);
       const response = await fetch(`${API_URL}/api/events/create`, {
@@ -170,7 +171,6 @@ const CreateEvent: React.FC = () => {
             {tags.map((tag) => (
               <Option key={tag.tag_id}>{tag.name}</Option>
             ))}
-            <Option>No Tag</Option>
           </Select>
         </Form.Item>
         <Form.Item {...tailLayout}>
