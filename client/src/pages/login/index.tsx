@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { Form, Input, Button, message } from 'antd';
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { API_URL } from "@/common/constants";
 
 const Login = () => {
   const [form] = Form.useForm();
@@ -13,7 +14,7 @@ const Login = () => {
   const onFormFinish = async (values: { email: string; password: string }) => {
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:5005/api/auth/login", {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),

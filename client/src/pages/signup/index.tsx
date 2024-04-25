@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { Form, Input, Button, message } from 'antd';
 import styles from './Signup.module.css';
 import Link from "next/link";
+import { API_URL } from "@/common/constants";
 
 const Signup = () => {
   const [form] = Form.useForm();
@@ -16,7 +17,7 @@ const Signup = () => {
   }) => {
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:5005/api/auth/signup", {
+      const response = await fetch(`${API_URL}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
