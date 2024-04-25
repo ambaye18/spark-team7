@@ -1,8 +1,10 @@
 import React from 'react';
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Profile = () => {
-  const userId = localStorage.getItem("userId"); // Retrieve user ID from local storage
+  const { authState } = useAuth();
+  const userId = authState?.decodedToken?.id;
 
   return (
     <div>
