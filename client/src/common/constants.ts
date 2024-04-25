@@ -1,1 +1,2 @@
-export const API_URL: string = "http://localhost:5005";
+export const API_URL: string =
+  process.env.NODE_ENV === "production" ? "" : "http://localhost:5005";

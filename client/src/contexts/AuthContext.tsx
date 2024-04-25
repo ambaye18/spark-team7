@@ -25,7 +25,7 @@ interface IAuthContext {
 // create a context for managing user state
 export const AuthContext = createContext<IAuthContext>({
   authState: undefined,
-  getAuthState: () => null,
+  getAuthState: () => initialState,
   updateAuthToken: () => null,
   clearAuthState: () => null,
   isAuthenticated: () => false,
