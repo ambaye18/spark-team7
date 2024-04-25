@@ -229,8 +229,6 @@ const Events: FC = () => {
               </Paragraph>
               <Paragraph style={{ color: "black", lineHeight: "3" }}>
                 Created by: {event.createdBy.name} <br />
-                Description: {event.description} <br />
-                Quantity: {event.qty} <br />
                 Tags:{" "}
                 {event.tags && event.tags.length > 0
                   ? event.tags.map((tag, index) => (
