@@ -54,7 +54,9 @@ const disabledTime = () => {
 */
 
 function tagConvert(allTags: ITag[], selected: number[]): ITag[] {
-  return allTags.filter((tag) => selected.includes(tag.tag_id));
+  if (selected != undefined)
+    return allTags.filter((tag) => selected.includes(tag.tag_id));
+  else return [];
 }
 
 const CreateEvent: React.FC = () => {
@@ -100,7 +102,7 @@ const CreateEvent: React.FC = () => {
         ...values,
         qty: values.qty.toString(),
         createdBy: authState?.decodedToken?.id,
-        tags: tagConvert(tags, values.tags as number[]),
+        tags: { tag_id: Number(values.tags) },
       });
       console.log("request body " + body);
       const response = await fetch(`${API_URL}/api/events/create`, {
@@ -168,6 +170,7 @@ const CreateEvent: React.FC = () => {
             {tags.map((tag) => (
               <Option key={tag.tag_id}>{tag.name}</Option>
             ))}
+            <Option>No Tag</Option>
           </Select>
         </Form.Item>
         <Form.Item {...tailLayout}>
