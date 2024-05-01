@@ -70,6 +70,16 @@ const CreateEvent: React.FC = () => {
   // Fetch tags
   useEffect(() => {
     async function fetchTags() {
+      const token = getAuthState()?.decodedToken;
+      if (!token) {
+        router.push("/");
+        return;
+      }
+      if (!token.canPostEvents) {
+        message.error("Unauthorized user");
+        router.push("/events");
+        return;
+      }
       try {
         const response = await fetch(`${API_URL}/api/tags`, {
           method: "GET",

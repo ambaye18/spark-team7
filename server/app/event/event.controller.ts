@@ -100,6 +100,15 @@ export const create_event = async (req: Request, res: Response) => {
   const { exp_time, description, qty, tags } = req.body;
   try {
     const userId = req.body.user.id;
+    const user = await prisma.user.findFirst({
+      where: {
+        id: userId,
+      },
+    });
+    if (!user?.canPostEvents) {
+      res.status(401);
+      return;
+    }
     const now = new Date().toISOString();
     //const photoData = req.body.photos;
     //const photoBuffer = Buffer.from(photoData, 'base64');

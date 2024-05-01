@@ -24,6 +24,8 @@ function SideMenu() {
   const signOut = () => {
     clearAuthState();
     router.push("/");
+    message.success("Logout success");
+    return;
   };
 
   const token = getAuthState()?.decodedToken;
