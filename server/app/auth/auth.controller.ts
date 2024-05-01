@@ -121,11 +121,15 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Invalid password' });
     }
 
-    const token = jwt.sign(
-      { id: user.id, name: user.name, email: user.email, canPostEvents: user.canPostEvents, isAdmin: user.isAdmin },
-      env.JWT_TOKEN_SECRET,
-      { expiresIn: '1h' }
-    );
+    const tokenPayload = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      canPostEvents: user.canPostEvents,
+      isAdmin: user.isAdmin,
+    };
+
+    const token = jwt.sign(tokenPayload, env.JWT_TOKEN_SECRET, { expiresIn: '1h' });
 
     return res.json({ success: true, token });
   } catch (error) {
