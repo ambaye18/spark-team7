@@ -17,6 +17,7 @@ import { ITag, IEvent } from "../../../common/interfaces";
 import dayjs from "dayjs";
 import { useAuth } from "@/contexts/AuthContext";
 import { parse } from "path";
+import { ILocation } from "@/common/interfaces_zod";
 const { Option } = Select;
 
 const layout = {
@@ -63,33 +64,70 @@ function parseTags(selected: number[]): any {
 const CreateEvent: React.FC = () => {
   const [form] = Form.useForm();
   const [tags, setTags] = useState<ITag[]>([]);
+  const [locations, setLocations] = useState<ILocation[]>([]);
   const [isLoadingTags] = useState(false);
   const router = useRouter();
   const { getAuthState, authState } = useAuth();
 
-  // Fetch tags
-  useEffect(() => {
-    async function fetchTags() {
-      try {
-        const response = await fetch(`${API_URL}/api/tags`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${getAuthState()?.token}`,
-          },
-        });
-        if (!response.ok) {
-          throw new Error(`Error fetching tags: ${response.status}`);
-        }
-        const data = await response.json();
-        console.log("Fetched tags:", data);
-        setTags(data);
-      } catch (error) {
-        console.error("Error fetching tags:", error);
-      }
+  const fetchTags = async () => {
+    const token = getAuthState()?.decodedToken;
+    if (!token) {
+      router.push("/");
+      return;
     }
+    if (!token.canPostEvents) {
+      message.error("Unauthorized user");
+      router.push("/events");
+      return;
+    }
+    try {
+      const response = await fetch(`${API_URL}/api/tags`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getAuthState()?.token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`Error fetching tags: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log("Fetched tags:", data);
+      setTags(data);
+    } catch (error) {
+      console.error("Error fetching tags:", error);
+    }
+  };
+
+  const fetchLocations = async () => {
+    const token = getAuthState()?.decodedToken;
+    if (!token) {
+      router.push("/");
+      return;
+    }
+    try {
+      const response = await fetch(`${API_URL}/api/locations/getAll`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getAuthState()?.token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`Error fetching locations: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log("Fetched locations:", data);
+      setLocations(data);
+    } catch (error) {
+      console.error("Error fetching locations:", error);
+    }
+  };
+
+  useEffect(() => {
     fetchTags();
-  }, [getAuthState]);
+    fetchLocations();
+  }, []);
 
   // Handle form submission
   const handleSubmit = async (values: IEvent) => {
@@ -105,7 +143,6 @@ const CreateEvent: React.FC = () => {
         createdBy: authState?.decodedToken?.id,
         tags: parseTags(values.tags as number[]),
       });
-      console.log("request body " + body);
       const response = await fetch(`${API_URL}/api/events/create`, {
         method: "POST",
         headers: {
@@ -125,6 +162,19 @@ const CreateEvent: React.FC = () => {
     } catch (error) {
       console.error(error);
       message.error("Error creating event. Please try again later.");
+    }
+  };
+
+  const handleLocationChange = (value: number) => {
+    // Find selected location from locations array
+    const selectedLocation = locations.find((loc) => loc.id === value);
+    if (selectedLocation) {
+      form.setFieldsValue({
+        address: selectedLocation.Address,
+        floor: selectedLocation.floor,
+        room: selectedLocation.room,
+        loc_note: selectedLocation.loc_note,
+      });
     }
   };
 
@@ -172,6 +222,30 @@ const CreateEvent: React.FC = () => {
               <Option key={tag.tag_id}>{tag.name}</Option>
             ))}
           </Select>
+        </Form.Item>
+        <Form.Item label="Select Location" name="location">
+          <Select
+            placeholder="Select a location(Optional Autofill)"
+            onChange={handleLocationChange}
+          >
+            {locations.map((location) => (
+              <Option key={location.id} value={location.id}>
+                {location.Address} - {location.floor} - {location.room}
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
+        <Form.Item label="Address" name="address">
+          <Input placeholder="Enter Address" />
+        </Form.Item>
+        <Form.Item label="Floor" name="floor">
+          <InputNumber placeholder="Enter Floor" />
+        </Form.Item>
+        <Form.Item label="Room" name="room">
+          <Input placeholder="Enter Room" />
+        </Form.Item>
+        <Form.Item label="Location Note" name="loc_note">
+          <Input placeholder="Enter Note" />
         </Form.Item>
         <Form.Item {...tailLayout}>
           <Button type="primary" htmlType="submit">
