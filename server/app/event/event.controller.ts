@@ -97,7 +97,7 @@ export const get_event_by_id = async (req: Request, res: Response) => {
 };
 
 export const create_event = async (req: Request, res: Response) => {
-  const { exp_time, description, qty, tags } = req.body;
+  const { exp_time, description, qty, tags, address, floor, room, loc_note } = req.body;
   try {
     const userId = req.body.user.id;
     const user = await prisma.user.findFirst({
@@ -137,6 +137,30 @@ export const create_event = async (req: Request, res: Response) => {
         //     photo: photoBase64,
         //   },
         // },
+      },
+    });
+
+    let location = await prisma.location.findFirst({
+      where: { Address: address, floor: floor, room: room, loc_note: loc_note },
+    });
+    if (!location) {
+      location = await prisma.location.create({
+        data: {
+          Address: address,
+          floor: floor,
+          room: room,
+          loc_note: loc_note,
+          event_id: newEvent.event_id,
+        },
+      });
+    }
+
+    prisma.event.update({
+      where: { event_id: newEvent.event_id },
+      data: {
+        location: {
+          connect: { id: location.id },
+        },
       },
     });
 

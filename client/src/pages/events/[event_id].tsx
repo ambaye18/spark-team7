@@ -100,6 +100,15 @@ const EventDetails: React.FC = () => {
             <Typography.Paragraph>
               Address: {eventData.location.Address}
             </Typography.Paragraph>
+            <Typography.Paragraph>
+              Floor: {eventData.location.floor}
+            </Typography.Paragraph>
+            <Typography.Paragraph>
+              Room: {eventData.location.room}
+            </Typography.Paragraph>
+            <Typography.Paragraph>
+              Note: {eventData.location.loc_note}
+            </Typography.Paragraph>
           </div>
         )}
         <Typography.Paragraph>

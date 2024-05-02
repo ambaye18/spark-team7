@@ -5,6 +5,7 @@ import helloRouter from './hello/hello.router.ts';
 import eventsRouter from './event/event.router.ts';
 import tagsRouter from './tags/tags.router.ts';
 import authRouter from './auth/auth.router.ts';
+import locationRouter from './location/locations.routers.ts';
 
 const app = express();
 
@@ -20,5 +21,6 @@ app.use('/api', helloRouter);
 app.use('/api/events', eventsRouter);
 app.use('/api/tags', tagsRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/locations', locationRouter);
 
 export default app;
