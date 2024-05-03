@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, ChangeEvent } from "react";
 import { useRouter } from "next/router";
 import {
   Typography,
@@ -12,12 +12,12 @@ import {
   TimeRangePickerProps,
 } from "antd";
 import customParseFormat from "dayjs/plugin/customParseFormat";
+import dayjs from "dayjs";
 import { API_URL } from "../../../common/constants";
 import { ITag, IEvent } from "../../../common/interfaces";
-import dayjs from "dayjs";
 import { useAuth } from "@/contexts/AuthContext";
-import { parse } from "path";
 import { ILocation } from "@/common/interfaces_zod";
+
 const { Option } = Select;
 
 const layout = {
@@ -35,6 +35,7 @@ const disabledDate: TimeRangePickerProps["disabledDate"] = (current) => {
   const today = dayjs();
   return current && current < today;
 };
+
 /*const range = (start: number, end: number) => {
   const result = [];
   for (let i = start; i < end; i++) {
@@ -66,6 +67,7 @@ const CreateEvent: React.FC = () => {
   const [tags, setTags] = useState<ITag[]>([]);
   const [locations, setLocations] = useState<ILocation[]>([]);
   const [isLoadingTags] = useState(false);
+  const [imageBase64Strings, setImageBase64Strings] = useState<string[]>([]);
   const router = useRouter();
   const { getAuthState, authState } = useAuth();
 
@@ -92,7 +94,6 @@ const CreateEvent: React.FC = () => {
         throw new Error(`Error fetching tags: ${response.status}`);
       }
       const data = await response.json();
-      console.log("Fetched tags:", data);
       setTags(data);
     } catch (error) {
       console.error("Error fetching tags:", error);
@@ -117,7 +118,6 @@ const CreateEvent: React.FC = () => {
         throw new Error(`Error fetching locations: ${response.status}`);
       }
       const data = await response.json();
-      console.log("Fetched locations:", data);
       setLocations(data);
     } catch (error) {
       console.error("Error fetching locations:", error);
@@ -129,7 +129,28 @@ const CreateEvent: React.FC = () => {
     fetchLocations();
   }, []);
 
-  // Handle form submission
+  const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    const fileList = Array.from(files);
+    Promise.all(fileList.map(file => {
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+      });
+    }))
+      .then(images => {
+        setImageBase64Strings(images);
+      })
+      .catch(error => {
+        console.error('Error converting images to base64', error);
+        message.error('Failed to convert images');
+      });
+  };
+
   const handleSubmit = async (values: IEvent) => {
     const token = getAuthState()?.token;
     if (!token) {
@@ -142,6 +163,7 @@ const CreateEvent: React.FC = () => {
         qty: values.qty.toString(),
         createdBy: authState?.decodedToken?.id,
         tags: parseTags(values.tags as number[]),
+        images: imageBase64Strings,
       });
       const response = await fetch(`${API_URL}/api/events/create`, {
         method: "POST",
@@ -158,7 +180,7 @@ const CreateEvent: React.FC = () => {
       }
 
       message.success("Event created successfully!");
-      router.push("/events"); // Redirect to events list after successful creation
+      router.push("/events");
     } catch (error) {
       console.error(error);
       message.error("Error creating event. Please try again later.");
@@ -166,7 +188,6 @@ const CreateEvent: React.FC = () => {
   };
 
   const handleLocationChange = (value: number) => {
-    // Find selected location from locations array
     const selectedLocation = locations.find((loc) => loc.id === value);
     if (selectedLocation) {
       form.setFieldsValue({
@@ -180,43 +201,20 @@ const CreateEvent: React.FC = () => {
 
   return (
     <div style={{ padding: "20px", width: "100%" }}>
-      <Typography.Title
-        level={2}
-        style={{ textAlign: "center", marginBottom: "20px" }}
-      >
+      <Typography.Title level={2} style={{ textAlign: "center", marginBottom: "20px" }}>
         Create Event
       </Typography.Title>
       <Form form={form} {...layout} onFinish={handleSubmit}>
-        <Form.Item
-          label="Description"
-          name="description"
-          rules={[{ required: true }]}
-        >
-          <Input.TextArea
-            placeholder="Enter event description"
-            autoSize={{ minRows: 4, maxRows: 8 }}
-          />
+        <Form.Item label="Description" name="description" rules={[{ required: true }]}>
+          <Input.TextArea placeholder="Enter event description" autoSize={{ minRows: 4, maxRows: 8 }} />
         </Form.Item>
         <Form.Item label="Quantity" name="qty" rules={[{ required: true }]}>
           <InputNumber placeholder="Enter quantity" />
         </Form.Item>
-        <Form.Item
-          label="Expiration Time"
-          name="exp_time"
-          rules={[{ required: true }]}
-        >
-          <DatePicker
-            format="YYYY-MM-DD HH:mm:ss"
-            disabledDate={disabledDate}
-            //disabledTime={disabledTime}
-            showTime={{ defaultValue: dayjs("00:00:00", "HH:mm:ss") }}
-          />
+        <Form.Item label="Expiration Time" name="exp_time" rules={[{ required: true }]}>
+          <DatePicker format="YYYY-MM-DD HH:mm:ss" disabledDate={disabledDate} showTime={{ defaultValue: dayjs("00:00:00", "HH:mm:ss") }} />
         </Form.Item>
-        <Form.Item
-          label="Tag (Optional)"
-          name="tags"
-          rules={[{ required: false }]}
-        >
+        <Form.Item label="Tag (Optional)" name="tags" rules={[{ required: false }]}>
           <Select loading={isLoadingTags}>
             {tags.map((tag) => (
               <Option key={tag.tag_id}>{tag.name}</Option>
@@ -224,16 +222,16 @@ const CreateEvent: React.FC = () => {
           </Select>
         </Form.Item>
         <Form.Item label="Select Location" name="location">
-          <Select
-            placeholder="Select a location(Optional Autofill)"
-            onChange={handleLocationChange}
-          >
+          <Select placeholder="Select a location(Optional Autofill)" onChange={handleLocationChange}>
             {locations.map((location) => (
               <Option key={location.id} value={location.id}>
                 {location.Address} - {location.floor} - {location.room}
               </Option>
             ))}
           </Select>
+        </Form.Item>
+        <Form.Item label="Upload Images" name="images">
+          <Input type="file" accept="image/*" multiple onChange={handleImageUpload} />
         </Form.Item>
         <Form.Item label="Address" name="address">
           <Input placeholder="Enter Address" />
