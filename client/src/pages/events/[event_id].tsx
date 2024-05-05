@@ -114,21 +114,23 @@ const EventDetails: React.FC = () => {
         <Typography.Paragraph>
           Created By: {eventData.createdBy.name}
         </Typography.Paragraph>
-        {eventData.photos && (
-          <div>
-            {eventData.photos.map((photo) => (
-              <Image
-                key={photo.id}
-                src={`data:image/png;base64,${photo.photo}`}
-                alt="Event Thumbnail"
-                width={100}
-                onError={(error) => {
-                  console.error("Failed to load image:", error);
-                }}
-              />
-            ))}
-          </div>
-        )}
+        <div>
+          {eventData.photos && (
+            <div>
+              {eventData.photos.map((photo) => (
+                <Image
+                  key={photo.id}
+                  src={`data:image/png;base64,${photo.photo}`}
+                  alt="Event Thumbnail"
+                  width={100}
+                  onError={(error) => {
+                    console.error("Failed to load image:", error);
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </Card>
     </div>
   );
