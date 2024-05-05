@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { Typography, Spin, Card, Tag } from "antd";
+import { Typography, Spin, Card, Tag, Image } from "antd";
 import { API_URL } from "../../common/constants";
 import { IEvent } from "@/common/interfaces";
 import { useAuth } from "@/contexts/AuthContext";
@@ -114,6 +114,21 @@ const EventDetails: React.FC = () => {
         <Typography.Paragraph>
           Created By: {eventData.createdBy.name}
         </Typography.Paragraph>
+        {eventData.photos && (
+          <div>
+            {eventData.photos.map((photo) => (
+              <Image
+                key={photo.id}
+                src={`data:image/png;base64,${photo.photo}`}
+                alt="Event Thumbnail"
+                width={100}
+                onError={(error) => {
+                  console.error("Failed to load image:", error);
+                }}
+              />
+            ))}
+          </div>
+        )}
       </Card>
     </div>
   );
