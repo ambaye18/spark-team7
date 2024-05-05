@@ -10,7 +10,10 @@ import {
   message,
   InputNumber,
   TimeRangePickerProps,
+  Upload,
+  Image,
 } from "antd";
+import { UploadChangeParam, UploadFile } from "antd/es/upload";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import dayjs from "dayjs";
 import { API_URL } from "../../../common/constants";
@@ -129,26 +132,36 @@ const CreateEvent: React.FC = () => {
     fetchLocations();
   }, []);
 
-  const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files) return;
+  const handleImageUpload = ({
+    fileList,
+  }: UploadChangeParam<UploadFile<any>>) => {
+    const validFiles = fileList
+      .slice(0, 10)
+      .filter((file) => file.originFileObj);
+    const newBase64Strings = validFiles.map(
+      (file) =>
+        new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = (error) => reject(error);
+          reader.readAsDataURL(file.originFileObj as Blob);
+        })
+    );
 
-    const fileList = Array.from(files);
-    Promise.all(fileList.map(file => {
-      return new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = error => reject(error);
-        reader.readAsDataURL(file);
-      });
-    }))
-      .then(images => {
-        setImageBase64Strings(images);
+    Promise.all(newBase64Strings)
+      .then((newImages) => {
+        setImageBase64Strings((prevImages) => [...prevImages, ...newImages]);
       })
-      .catch(error => {
-        console.error('Error converting images to base64', error);
-        message.error('Failed to convert images');
+      .catch((error) => {
+        console.error("Error converting images to base64", error);
+        message.error("Failed to convert images");
       });
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setImageBase64Strings((prevImages) =>
+      prevImages.filter((_, i) => i !== index)
+    );
   };
 
   const handleSubmit = async (values: IEvent) => {
@@ -201,20 +214,42 @@ const CreateEvent: React.FC = () => {
 
   return (
     <div style={{ padding: "20px", width: "100%" }}>
-      <Typography.Title level={2} style={{ textAlign: "center", marginBottom: "20px" }}>
+      <Typography.Title
+        level={2}
+        style={{ textAlign: "center", marginBottom: "20px" }}
+      >
         Create Event
       </Typography.Title>
       <Form form={form} {...layout} onFinish={handleSubmit}>
-        <Form.Item label="Description" name="description" rules={[{ required: true }]}>
-          <Input.TextArea placeholder="Enter event description" autoSize={{ minRows: 4, maxRows: 8 }} />
+        <Form.Item
+          label="Description"
+          name="description"
+          rules={[{ required: true }]}
+        >
+          <Input.TextArea
+            placeholder="Enter event description"
+            autoSize={{ minRows: 4, maxRows: 8 }}
+          />
         </Form.Item>
         <Form.Item label="Quantity" name="qty" rules={[{ required: true }]}>
           <InputNumber placeholder="Enter quantity" />
         </Form.Item>
-        <Form.Item label="Expiration Time" name="exp_time" rules={[{ required: true }]}>
-          <DatePicker format="YYYY-MM-DD HH:mm:ss" disabledDate={disabledDate} showTime={{ defaultValue: dayjs("00:00:00", "HH:mm:ss") }} />
+        <Form.Item
+          label="Expiration Time"
+          name="exp_time"
+          rules={[{ required: true }]}
+        >
+          <DatePicker
+            format="YYYY-MM-DD HH:mm:ss"
+            disabledDate={disabledDate}
+            showTime={{ defaultValue: dayjs("00:00:00", "HH:mm:ss") }}
+          />
         </Form.Item>
-        <Form.Item label="Tag (Optional)" name="tags" rules={[{ required: false }]}>
+        <Form.Item
+          label="Tag (Optional)"
+          name="tags"
+          rules={[{ required: false }]}
+        >
           <Select loading={isLoadingTags}>
             {tags.map((tag) => (
               <Option key={tag.tag_id}>{tag.name}</Option>
@@ -222,16 +257,16 @@ const CreateEvent: React.FC = () => {
           </Select>
         </Form.Item>
         <Form.Item label="Select Location" name="location">
-          <Select placeholder="Select a location(Optional Autofill)" onChange={handleLocationChange}>
+          <Select
+            placeholder="Select a location(Optional Autofill)"
+            onChange={handleLocationChange}
+          >
             {locations.map((location) => (
               <Option key={location.id} value={location.id}>
                 {location.Address} - {location.floor} - {location.room}
               </Option>
             ))}
           </Select>
-        </Form.Item>
-        <Form.Item label="Upload Images" name="images">
-          <Input type="file" accept="image/*" multiple onChange={handleImageUpload} />
         </Form.Item>
         <Form.Item label="Address" name="address">
           <Input placeholder="Enter Address" />
@@ -245,6 +280,33 @@ const CreateEvent: React.FC = () => {
         <Form.Item label="Location Note" name="loc_note">
           <Input placeholder="Enter Note" />
         </Form.Item>
+        <Form.Item label="Upload Images" name="images">
+          <Upload
+            listType="picture-card"
+            fileList={imageBase64Strings.map((base64, index) => ({
+              uid: index.toString(),
+              name: `image_${index}.jpg`,
+              url: base64,
+            }))}
+            onRemove={(file) => handleRemoveImage(parseInt(file.uid, 10))}
+            onChange={handleImageUpload}
+            showUploadList={{
+              showRemoveIcon: true,
+            }}
+            multiple
+            maxCount={10}
+          >
+            {imageBase64Strings.length < 10 && "+ Upload"}
+          </Upload>
+        </Form.Item>
+        {imageBase64Strings.map((base64, index) => (
+          <Image
+            key={index}
+            src={base64}
+            width={200}
+            style={{ marginRight: "10px" }}
+          />
+        ))}
         <Form.Item {...tailLayout}>
           <Button type="primary" htmlType="submit">
             Create Event
