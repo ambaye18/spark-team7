@@ -115,14 +115,15 @@ const EventDetails: React.FC = () => {
           Created By: {eventData.createdBy.name}
         </Typography.Paragraph>
         <div>
+          <Typography.Paragraph>Images:</Typography.Paragraph>
           {eventData.photos && (
             <div>
               {eventData.photos.map((photo) => (
                 <Image
                   key={photo.id}
-                  src={`data:image/png;base64,${photo.photo}`}
-                  alt="Event Thumbnail"
-                  width={100}
+                  src={photo.photo}
+                  alt="Event Image"
+                  width={300}
                   onError={(error) => {
                     console.error("Failed to load image:", error);
                   }}
