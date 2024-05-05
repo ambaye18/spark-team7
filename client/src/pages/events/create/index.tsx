@@ -195,7 +195,6 @@ const CreateEvent: React.FC = () => {
       message.success("Event created successfully!");
       router.push("/events");
     } catch (error) {
-      console.error(error);
       message.error("Error creating event. Please try again later.");
     }
   };

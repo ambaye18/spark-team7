@@ -58,13 +58,9 @@ const Events: FC = () => {
         setTotalEvents(eventsData.length);
       } catch (error) {
         console.error(error);
-        message.error(
-          "An error occurred while fetching events. Please try again later."
-        );
       }
     };
     fetchEvents();
-    console.log(events);
   }, [getAuthState]);
 
   const handlePageChange = (page: number, pageSize?: number) => {
