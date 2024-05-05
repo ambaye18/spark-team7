@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, ChangeEvent } from "react";
 import { useRouter } from "next/router";
 import {
   Typography,
@@ -10,14 +10,17 @@ import {
   message,
   InputNumber,
   TimeRangePickerProps,
+  Upload,
+  Image,
 } from "antd";
+import { UploadChangeParam, UploadFile } from "antd/es/upload";
 import customParseFormat from "dayjs/plugin/customParseFormat";
+import dayjs from "dayjs";
 import { API_URL } from "../../../common/constants";
 import { ITag, IEvent } from "../../../common/interfaces";
-import dayjs from "dayjs";
 import { useAuth } from "@/contexts/AuthContext";
-import { parse } from "path";
 import { ILocation } from "@/common/interfaces_zod";
+
 const { Option } = Select;
 
 const layout = {
@@ -35,6 +38,7 @@ const disabledDate: TimeRangePickerProps["disabledDate"] = (current) => {
   const today = dayjs();
   return current && current < today;
 };
+
 /*const range = (start: number, end: number) => {
   const result = [];
   for (let i = start; i < end; i++) {
@@ -66,6 +70,7 @@ const CreateEvent: React.FC = () => {
   const [tags, setTags] = useState<ITag[]>([]);
   const [locations, setLocations] = useState<ILocation[]>([]);
   const [isLoadingTags] = useState(false);
+  const [imageBase64Strings, setImageBase64Strings] = useState<string[]>([]);
   const router = useRouter();
   const { getAuthState, authState } = useAuth();
 
@@ -92,7 +97,6 @@ const CreateEvent: React.FC = () => {
         throw new Error(`Error fetching tags: ${response.status}`);
       }
       const data = await response.json();
-      console.log("Fetched tags:", data);
       setTags(data);
     } catch (error) {
       console.error("Error fetching tags:", error);
@@ -117,7 +121,6 @@ const CreateEvent: React.FC = () => {
         throw new Error(`Error fetching locations: ${response.status}`);
       }
       const data = await response.json();
-      console.log("Fetched locations:", data);
       setLocations(data);
     } catch (error) {
       console.error("Error fetching locations:", error);
@@ -129,7 +132,38 @@ const CreateEvent: React.FC = () => {
     fetchLocations();
   }, []);
 
-  // Handle form submission
+  const handleImageUpload = ({
+    fileList,
+  }: UploadChangeParam<UploadFile<any>>) => {
+    const validFiles = fileList
+      .slice(0, 10)
+      .filter((file) => file.originFileObj);
+    const newBase64Strings = validFiles.map(
+      (file) =>
+        new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = (error) => reject(error);
+          reader.readAsDataURL(file.originFileObj as Blob);
+        })
+    );
+
+    Promise.all(newBase64Strings)
+      .then((newImages) => {
+        setImageBase64Strings((prevImages) => [...prevImages, ...newImages]);
+      })
+      .catch((error) => {
+        console.error("Error converting images to base64", error);
+        message.error("Failed to convert images");
+      });
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setImageBase64Strings((prevImages) =>
+      prevImages.filter((_, i) => i !== index)
+    );
+  };
+
   const handleSubmit = async (values: IEvent) => {
     const token = getAuthState()?.token;
     if (!token) {
@@ -142,6 +176,7 @@ const CreateEvent: React.FC = () => {
         qty: values.qty.toString(),
         createdBy: authState?.decodedToken?.id,
         tags: parseTags(values.tags as number[]),
+        images: imageBase64Strings,
       });
       const response = await fetch(`${API_URL}/api/events/create`, {
         method: "POST",
@@ -158,7 +193,7 @@ const CreateEvent: React.FC = () => {
       }
 
       message.success("Event created successfully!");
-      router.push("/events"); // Redirect to events list after successful creation
+      router.push("/events");
     } catch (error) {
       console.error(error);
       message.error("Error creating event. Please try again later.");
@@ -166,7 +201,6 @@ const CreateEvent: React.FC = () => {
   };
 
   const handleLocationChange = (value: number) => {
-    // Find selected location from locations array
     const selectedLocation = locations.find((loc) => loc.id === value);
     if (selectedLocation) {
       form.setFieldsValue({
@@ -208,7 +242,6 @@ const CreateEvent: React.FC = () => {
           <DatePicker
             format="YYYY-MM-DD HH:mm:ss"
             disabledDate={disabledDate}
-            //disabledTime={disabledTime}
             showTime={{ defaultValue: dayjs("00:00:00", "HH:mm:ss") }}
           />
         </Form.Item>
@@ -247,6 +280,33 @@ const CreateEvent: React.FC = () => {
         <Form.Item label="Location Note" name="loc_note">
           <Input placeholder="Enter Note" />
         </Form.Item>
+        <Form.Item label="Upload Images" name="images">
+          <Upload
+            listType="picture-card"
+            fileList={imageBase64Strings.map((base64, index) => ({
+              uid: index.toString(),
+              name: `image_${index}.jpg`,
+              url: base64,
+            }))}
+            onRemove={(file) => handleRemoveImage(parseInt(file.uid, 10))}
+            onChange={handleImageUpload}
+            showUploadList={{
+              showRemoveIcon: true,
+            }}
+            multiple
+            maxCount={10}
+          >
+            {imageBase64Strings.length < 10 && "+ Upload"}
+          </Upload>
+        </Form.Item>
+        {imageBase64Strings.map((base64, index) => (
+          <Image
+            key={index}
+            src={base64}
+            width={200}
+            style={{ marginRight: "10px" }}
+          />
+        ))}
         <Form.Item {...tailLayout}>
           <Button type="primary" htmlType="submit">
             Create Event
