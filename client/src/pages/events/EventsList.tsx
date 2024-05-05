@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { IEvent } from '../../common/interfaces';
-import { Spin } from 'antd';
+import { Spin, Image } from 'antd';
 import { API_URL } from "@/common/constants";
 
 const EventsList: React.FC = () => {
@@ -33,7 +33,25 @@ const EventsList: React.FC = () => {
       {isLoading && <Spin />}
       {!isLoading && events.length === 0 && <p>No events found</p>}
 
-      {!isLoading && events.map((event) => <div key={event.event_id}> </div>)}
+      {!isLoading && events.map((event) => (
+        <div key={event.event_id}>
+          {event.photos && (
+            <div>
+              {event.photos.map((photo) => (
+                <Image
+                  key={photo.id}
+                  src={`data:image/png;base64,${photo.photo}`}
+                  alt="Event Thumbnail"
+                  width={100}
+                  onError={(error) => {
+                    console.error('Failed to load image:', error);
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 };
