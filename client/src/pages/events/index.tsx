@@ -9,6 +9,7 @@ import {
   Select,
   Button,
   Tag,
+  Image,
 } from "antd";
 import { API_URL } from "../../common/constants";
 import { IAuthTokenDecoded, IEvent, ITag } from "../../common/interfaces";
@@ -63,6 +64,7 @@ const Events: FC = () => {
       }
     };
     fetchEvents();
+    console.log(events);
   }, [getAuthState]);
 
   const handlePageChange = (page: number, pageSize?: number) => {
@@ -244,6 +246,22 @@ const Events: FC = () => {
                   ? `${event.location.Address}, Floor ${event.location.floor}, Room ${event.location.room}`
                   : "Not specified"}
               </Paragraph>
+              {event.photos && (
+                <div>
+                  {event.photos.map((photo) => (
+                    <Image
+                      key={photo.id}
+                      src={photo.photo}
+                      alt="Event Thumbnail"
+                      width={100}
+                      height={100}
+                      onError={(error: any) => {
+                        console.error("Failed to load image:", error);
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
             </Card>
           </List.Item>
         )}
